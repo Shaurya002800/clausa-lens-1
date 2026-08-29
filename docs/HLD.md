@@ -135,11 +135,11 @@ The first comparison controls access to experimentation. The second produces the
 ## Error boundaries
 
 - Invalid or tampered capsule: block before runtime creation.
-- Missing fixture or unsupported pack version: mark `BLOCKED` with a concrete reason.
-- Attempted prohibited egress or production access: terminate the run and mark `BLOCKED`.
-- Service or simulator crash: mark `FAILED`; do not classify it as non-reproduction.
-- Completed run with a false oracle: mark `NOT_REPRODUCED` and stop experimentation.
+- Missing fixture or unsupported pack version: set status `BLOCKED` with a concrete error.
+- Attempted prohibited egress or production access: terminate the run and set status `BLOCKED`.
+- Service or simulator crash: set status `FAILED`; do not assign a completed outcome.
+- Safe completed baseline with a false oracle: set status `COMPLETED`, outcome `NOT_REPRODUCED`, and stop experimentation.
 
 ## HLD-to-implementation gate
 
-Before parallel coding begins, E0 must record the selected application stack and freeze versioned definitions for `ExecutionEvent`, `Incident`, graph edges, Replay Capsule, replay run, intervention, Replay Diff, failure oracle, and System Pack. Framework choice may change implementation mechanics but must not change these responsibilities or the product boundary.
+The stack, repository layout, ownership, APIs, and versioned definitions for `ExecutionEvent`, `Incident`, graph edges, Replay Capsule, replay run, intervention, Replay Diff, failure oracle, reset, and System Pack are frozen in [CONTRACTS.md](CONTRACTS.md). Implementation must preserve those contracts and these runtime responsibilities.

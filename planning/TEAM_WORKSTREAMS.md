@@ -1,8 +1,8 @@
 # Team Workstreams
 
-The team is currently in a preparation and contract-freeze phase. Present responsibilities and later implementation ownership are tracked separately so that planning does not pretend coding has already been divided.
+E0 separates preparation responsibilities from implementation ownership. The implementation mapping below is frozen with the repository layout in [docs/CONTRACTS.md](../docs/CONTRACTS.md#frozen-repository-layout-and-ownership).
 
-## Current preparation responsibilities
+## Preparation responsibilities
 
 ### Member 1 — Judge defense and grill-me preparation
 
@@ -10,91 +10,144 @@ Owns:
 
 - adversarial technical and product questions,
 - claim-defense practice,
-- competitor and observability-tool comparisons,
+- observability-tool comparisons,
 - limitations and failure-case questions,
 - concise answers about replay fidelity, safety, determinism, and causality, and
-- feedback to the repository owner when documentation creates a weak or unsupported claim.
+- feedback when documentation creates a weak or unsupported claim.
 
-Output: a reviewed question-and-answer set and a list of documentation contradictions or missing defenses.
+Output: a reviewed question-and-answer set plus documentation contradictions or missing defenses.
 
 ### Member 2 — Repository and product-contract owner
 
 Owns:
 
-- alignment with the project baseline,
-- canonical terminology and product positioning,
-- document consistency,
+- alignment with the approved product baseline,
+- canonical terminology and positioning,
+- documentation and contract consistency,
 - P0/P1/P2 scope control,
 - architecture and data-contract refinement,
 - incorporation of reviewed team feedback, and
 - approval tracking for repository changes.
 
-Output: one coherent, implementation-ready source of truth for the project.
+Output: one coherent, implementation-ready source of truth.
 
-### Member 3 — Project understanding and comprehension review
+### Member 3 — Project comprehension reviewer
 
 Owns:
 
 - learning the complete capture-to-diff workflow,
-- explaining every component and boundary without reading the files verbatim,
+- explaining every component and boundary,
 - checking that diagrams, terms, and contracts are understandable,
-- identifying ambiguous concepts or hidden assumptions,
+- identifying ambiguity or hidden assumptions,
 - walking through the golden demo event by event, and
 - confirming that a new implementer could use the documentation.
 
-Output: a teach-back of the project plus questions and ambiguity reports for the repository owner.
+Output: a project teach-back plus ambiguity reports for Member 2.
 
 ## Preparation coordination
 
-1. The repository owner publishes a coherent revision.
-2. The comprehension reviewer explains it back and identifies ambiguity.
-3. The grill-me owner attacks the claims and technical assumptions.
-4. The repository owner incorporates accepted corrections without expanding P0.
-5. All three approve the E0 contracts before implementation ownership is frozen.
+1. Member 2 publishes the coherent contract revision.
+2. Member 3 explains it back and identifies ambiguity.
+3. Member 1 attacks the claims and technical assumptions.
+4. Member 2 incorporates accepted corrections without expanding P0.
+5. All three approve the E0 freeze before implementation begins.
 
-## Post-E0 implementation workstreams
+## Frozen implementation ownership
 
-These are component streams, not automatic assignments to the three current members.
+### Member 1 — Demo, capture, and checkout System Pack
 
-### Workstream A — Demo capture and incident reconstruction
+Owns:
 
-Owns demo services, instrumentation, event normalization, persistence, failure-oracle evaluation, graph construction, timeline construction, and incident inspection.
-
-Primary handoff:
-
-```text
-instrumented execution -> normalized events -> incident graph and timeline
-```
-
-### Workstream B — Capsule and isolated replay
-
-Owns capsule compilation, validation, fixtures, replay runtime, simulators, isolation enforcement, lifecycle, reset, intervention application, and replay event capture.
+- Gateway, Checkout, Payment, and Ledger demo services,
+- canonical event emission and capture adapters,
+- checkout duplicate-effect System Pack,
+- failure oracle and effect classification,
+- sanitized state and dependency fixtures,
+- deterministic golden scenario and reset fixtures, and
+- unit tests for demo and pack behavior.
 
 Primary handoff:
 
 ```text
-incident + fixtures -> Replay Capsule -> replay result and isolation evidence
+demo execution -> normalized events + System Pack + golden fixtures
 ```
 
-### Workstream C — Diff, API, and Command Center
+Owned paths:
 
-Owns orchestration APIs, event alignment, Replay Diff, first divergence, incident and capsule views, replay controls, status views, timeline comparison, and demo integration.
+- `cmd/demo-*`
+- `internal/capture`
+- `internal/systempack/checkout`
+- `test/fixtures/golden`
+
+### Member 2 — Core API, persistence, replay, and differential engine
+
+Owns:
+
+- canonical Go contract types and validation,
+- Core API and PostgreSQL migrations,
+- incident creation, graph reconstruction, and deterministic timeline,
+- Replay Capsule compilation and integrity,
+- replay worker, namespace isolation, and safety evidence,
+- baseline authorization and intervention enforcement,
+- Replay Diff and first meaningful divergence,
+- Docker Compose orchestration, and
+- unit tests for core, replay, safety, and diff behavior.
 
 Primary handoff:
 
 ```text
-baseline + what-if results -> Replay Diff -> judge-visible workflow
+events + pack -> incident -> capsule -> replay runs -> Replay Diff API resources
 ```
+
+Owned paths:
+
+- `cmd/core-api`
+- `cmd/replay-worker`
+- `internal/contracts`
+- `internal/core`
+- `internal/graph`
+- `internal/capsule`
+- `internal/replay`
+- `internal/differential`
+- `db/migrations`
+- `deploy/compose.yaml`
+
+Changes to `internal/contracts` require all-member review.
+
+### Member 3 — Command Center and integration
+
+Owns:
+
+- Next.js Command Center,
+- incident, graph, and timeline views,
+- capsule validation and isolation evidence views,
+- baseline and what-if controls,
+- replay lifecycle and error presentation,
+- side-by-side Replay Diff and first-divergence UI,
+- API client integration,
+- end-to-end integration tests, and
+- judge-visible demo workflow.
+
+Primary handoff:
+
+```text
+Core API resources -> verified judge-visible workflow
+```
+
+Owned paths:
+
+- `web`
+- `test/integration`
 
 ## Shared responsibilities
 
-- Versioned contract review.
-- Integration tests and deterministic fixtures.
-- Clean reset and fallback recording.
-- Golden demo rehearsal.
+- Contract-change review.
+- End-to-end integration and deterministic reset checks.
+- Isolation and side-effect review.
+- Golden demo rehearsal and fallback recording.
 - Claim and limitation review.
 - Final pitch preparation.
 
 ## Coordination rule
 
-E0 contracts are frozen before parallel implementation. A breaking change requires explicit agreement, a version update, identification of affected workstreams, and confirmation that it does not expand P0.
+E0 contract names and interfaces are frozen. A breaking change requires all-member agreement, a contract-version update, affected-workstream review, and confirmation that P0 does not expand. Implementation details inside an owned path may change without cross-team approval when they preserve the frozen contracts and safety boundary.

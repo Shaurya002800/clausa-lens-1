@@ -4,50 +4,11 @@ A Replay Capsule is an immutable, versioned artifact containing the minimum cont
 
 It is not a full production snapshot. It contains only sanitized inputs, fixtures, policies, dependency behavior, and verification rules required by the selected System Pack.
 
-## Version 1 contract
+## Version 1 contract authority
 
-```text
-ReplayCapsule
-├── schema_version
-├── capsule_id
-├── created_at
-├── source
-│   ├── incident_id
-│   ├── trace_id
-│   ├── capture_environment
-│   └── captured_at
-├── system_pack
-│   ├── id
-│   └── version
-├── trigger
-│   ├── request_or_message
-│   └── sanitized_headers
-├── events[]
-├── graph
-│   ├── node_event_ids[]
-│   └── edges[]
-├── state_fixtures[]
-├── dependency_fixtures[]
-├── timing_policy
-├── replay_plan
-│   ├── entrypoint
-│   ├── service_order
-│   └── reset_strategy
-├── failure_oracle
-│   ├── id
-│   ├── version
-│   ├── expected_result
-│   └── expected_evidence
-├── allowed_interventions[]
-├── safety
-│   ├── sanitization_status
-│   ├── blocked_destinations[]
-│   ├── allowed_destinations[]
-│   └── credential_profile
-└── integrity
-    ├── algorithm
-    └── digest
-```
+The sole normative `ReplayCapsule` v1.0 field set, nested types, required/nullable rules, validation behavior, integrity rules, and golden example are frozen in [CONTRACTS.md](CONTRACTS.md#replaycapsule-v10).
+
+This document explains capsule invariants and compiler responsibilities. It must not introduce alternate field names or a second schema.
 
 ## Required semantics
 

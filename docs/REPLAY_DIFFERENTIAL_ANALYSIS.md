@@ -24,7 +24,7 @@ The goal is structural and outcome equivalence for the supported scenario, not b
 
 This comparison answers: **What changed when exactly one approved condition changed?**
 
-The analyzer aligns events using stable semantic keys such as service, operation, event type, logical operation identifier, and attempt. It then reports:
+The analyzer aligns events using stable semantic keys such as `component.name`, `operation.name`, event type, logical operation identifier, and attempt. It then reports:
 
 - matched events,
 - added and removed events,
@@ -49,26 +49,9 @@ Incidental timestamp jitter within the System Pack's tolerance is ignored. For t
 
 ## Replay Diff contract
 
-```text
-ReplayDiff
-├── diff_id
-├── baseline_run_id
-├── comparison_run_id
-├── alignment_version
-├── intervention
-├── baseline_oracle_result
-├── comparison_oracle_result
-├── matched_events[]
-├── added_events[]
-├── removed_events[]
-├── changed_events[]
-├── first_meaningful_divergence
-├── effect_delta
-├── evidence_summary
-└── limitations[]
-```
+The sole normative `ReplayDiff` v1.0 shape, including alignment records, effect summaries, effect delta, first-divergence fields, evidence summary, validation rules, and a golden example, is frozen in [CONTRACTS.md](CONTRACTS.md#replaydiff-v10).
 
-`first_meaningful_divergence` records the aligned event keys, baseline value, comparison value, timestamp offset, and rule that made the difference meaningful.
+This analyzer must populate that contract rather than defining a local variant. `first_meaningful_divergence` identifies the aligned baseline/comparison events, the rule that made the difference meaningful, their values, and their deterministic timeline indices.
 
 ## Evidence-backed interpretation
 
@@ -97,4 +80,3 @@ Reducing only payment latency should remove the timeout, retry, and duplicate ef
 - A passed intervention does not establish causality for arbitrary deployments.
 - Nondeterminism outside declared controls may reduce comparability.
 - AI may summarize an existing Replay Diff in future work, but it must not invent evidence or replace deterministic comparison.
-

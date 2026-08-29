@@ -19,9 +19,11 @@ The architecture exists to make one supported distributed incident safely replay
 
 ## Core contracts
 
+All v1.0 field names, validation rules, examples, lifecycle semantics, ordering rules, and interfaces are normative in [CONTRACTS.md](CONTRACTS.md). The summaries below explain architectural use and must not define competing shapes.
+
 ### ExecutionEvent
 
-The canonical v1.0 shape and field semantics are frozen in [CONTRACTS.md](CONTRACTS.md). Use `component.name`, `occurred_at`, `sequence`, `logical_operation_id`, and `replay_run_id`; do not introduce ambiguous `service`, `timestamp_ms`, `latency_ms`, or a generic `links` array for P0. Raw logs or OpenTelemetry spans may feed the normalizer, but they are not the canonical internal model.
+The canonical v1.0 shape and field semantics are frozen in [CONTRACTS.md](CONTRACTS.md). Implementers must use those names directly rather than introduce aliases or generic relationship fields. Raw logs or OpenTelemetry spans may feed the normalizer, but they are not the canonical internal model.
 
 ### Incident
 
@@ -130,7 +132,7 @@ CREATED
 - `FAILED` means the replay could not complete because of an internal or fixture error.
 - `BLOCKED` means schema, integrity, safety, or adapter validation rejected the run.
 
-Only a baseline run in `REPRODUCED` state may authorize a what-if replay.
+Only a baseline run with status `COMPLETED`, outcome `REPRODUCED`, and passing isolation evidence may authorize a what-if replay.
 
 ## MVP deployment boundary
 

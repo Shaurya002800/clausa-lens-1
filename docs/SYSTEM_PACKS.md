@@ -4,9 +4,11 @@ System Packs adapt the CausaLens replay workflow to explicitly supported failure
 
 A pack is a versioned adapter contract, not a promise that the MVP supports arbitrary systems.
 
-## Version 1 interface
+## Responsibilities
 
-A System Pack defines:
+The sole normative SystemPack v1.0 descriptor, Go method signatures, boundary types, validation behavior, and P0 descriptor are frozen in [CONTRACTS.md](CONTRACTS.md#systempack-v10).
+
+A System Pack is responsible for:
 
 | Capability | Responsibility |
 | --- | --- |
@@ -55,7 +57,7 @@ Enable deduplication while retaining the latency fault. This is a separate run a
 
 ### Comparison rules
 
-- Align events by service, operation, logical operation identifier, event type, and attempt.
+- Align events by `component.name`, `operation.name`, logical operation identifier, event type, and attempt.
 - Treat timing differences within declared tolerance as equivalent.
 - Preserve retry and repeated-effect events.
 - Highlight the earliest threshold, status, retry, or effect divergence.

@@ -131,9 +131,9 @@ It does **not** claim:
 
 ## Current status
 
-The repository currently contains the refined product, architecture, replay, safety, demo, scope, execution documentation, and the frozen v1.0 contract set in [docs/CONTRACTS.md](docs/CONTRACTS.md). Implementation has not started.
+The repository contains the refined product, architecture, replay, safety, demo, scope, execution documentation, and the final E0 v1.0 contract freeze in [docs/CONTRACTS.md](docs/CONTRACTS.md). `CONTRACTS.md` is the sole authority for implementation field names, enums, lifecycles, ordering, APIs, interfaces, repository boundaries, and ownership. Implementation has not started.
 
-The next gate is E1 capture-to-trace implementation. E0 freezes the stack and the event, incident, capsule, replay, intervention, diff, oracle, safety, reset, and System Pack contracts.
+The next gate is E1 capture-to-incident-trace implementation. Any breaking change to the frozen contracts requires all-member agreement and a contract-version update.
 
 ## Documentation
 

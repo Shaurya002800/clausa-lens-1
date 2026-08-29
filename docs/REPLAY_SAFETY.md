@@ -68,10 +68,12 @@ Failure at this gate prevents all what-if replays for that baseline.
 
 ## Failure classification
 
-- Validation failure or unsafe configuration: `BLOCKED`.
-- Prohibited runtime interaction: terminate and mark `BLOCKED`.
-- Internal service, simulator, or fixture failure: `FAILED`.
-- Safe completed execution without the expected incident: `NOT_REPRODUCED`.
-- Safe completed execution with the expected incident: `REPRODUCED`.
+- Validation failure or unsafe configuration: status `BLOCKED`, no outcome.
+- Prohibited runtime interaction: terminate with status `BLOCKED`, no outcome.
+- Internal service, simulator, or fixture failure: status `FAILED`, no outcome.
+- Safe completed baseline without the expected incident: status `COMPLETED`, outcome `NOT_REPRODUCED`.
+- Safe completed baseline with the expected incident: status `COMPLETED`, outcome `REPRODUCED`.
+- Safe completed what-if without the baseline failure: status `COMPLETED`, outcome `MITIGATED`.
+- Safe completed what-if with the same failure: status `COMPLETED`, outcome `UNCHANGED`.
 
-CausaLens must never relabel a blocked or failed run as a successful non-reproduction.
+CausaLens must never assign an outcome to a blocked or failed run.

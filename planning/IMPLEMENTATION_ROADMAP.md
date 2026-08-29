@@ -4,9 +4,11 @@ This roadmap describes the critical implementation sequence. [E0–E3](E0-E3.md)
 
 ## Phase 1 — Freeze the proof
 
+**Status:** Complete. The authority is [docs/CONTRACTS.md](../docs/CONTRACTS.md).
+
 - Select and record the application stack.
 - Freeze versioned contracts and validation behavior.
-- Freeze the golden demo values and deterministic fixtures.
+- Freeze the golden demo values and deterministic fixture contract.
 - Define the single duplicate-effect System Pack boundary.
 - Define isolation enforcement and clean reset behavior.
 
