@@ -1,126 +1,161 @@
 # CausaLens
 
-CausaLens is a causal replay experimentation platform for distributed systems.
+**Distributed Incident Replay & Investigation**
 
-It captures execution evidence from an incident, reconstructs its propagation graph, compiles the minimum safe inputs, state, policies, and failure conditions into an immutable Replay Capsule, verifies reproducibility inside an isolated replay environment, and then performs controlled single-variable interventions to determine why the incident occurred.
+> Make distributed incidents replayable.
 
-## Core idea
+CausaLens captures a request's journey across an instrumented distributed system, turns the incident into an immutable Replay Capsule, safely reproduces the failure in isolation, and shows how execution changes when one approved condition is modified.
 
-Traditional observability platforms are primarily designed to answer **what happened**. CausaLens is designed to experimentally investigate **why it happened**.
+Traditional observability helps engineers inspect what happened. CausaLens adds the controlled reproduction step: replay the failure, change one thing, and inspect the first meaningful divergence.
 
-The core workflow is:
+## Core workflow
 
 ```text
-Distributed System
-        |
-        v
-Execution Evidence
-        |
-        v
-Propagation Graph
-        |
-        v
-Replay Capsule
-        |
-        v
-Isolated Replay
-        |
-        +--> Baseline Replay
-        +--> Counterfactual Intervention A
-        +--> Counterfactual Intervention B
-        +--> Counterfactual Intervention C
-        |
-        v
-Differential Analysis
-        |
-        v
-Causal Explanation
+Capture
+  -> Detect Incident
+  -> Reconstruct Trace and Timeline
+  -> Compile Replay Capsule
+  -> Verify Isolation
+  -> Reproduce Baseline Failure
+  -> Change One Approved Condition
+  -> Run What-if Replay
+  -> Diff Executions
+  -> Explain the Evidence
 ```
 
-CausaLens aims to distinguish:
+Replay is the product's center. What-if experimentation is the differentiator that becomes available only after baseline reproduction succeeds.
 
-- initiating trigger
-- amplification behavior
-- latent defect
-- temporary mitigation
+## Golden demo
 
-instead of relying only on correlation across logs and traces.
+The hackathon MVP supports one controlled checkout failure:
+
+```text
+Gateway -> Checkout -> Payment -> Ledger
+                         |
+                         +-- latency exceeds timeout
+                                   |
+                                   v
+                                 retry
+                                   |
+                                   v
+                         duplicate ledger effect
+```
+
+The demo captures the incident, reconstructs both payment attempts, packages the required evidence and fixtures, and reproduces the duplicate effect inside a replay-only environment.
+
+The P0 what-if replay changes only payment latency:
+
+```text
+BASELINE                         WHAT-IF
+Payment latency 350 ms           Payment latency 50 ms
+        |                                |
+Checkout timeout                 Payment completes
+        |                                |
+Retry attempt 2                  Checkout completes
+        |
+Two ledger effects               One ledger effect
+        |
+Oracle: true                     Oracle: false
+```
+
+The Replay Diff highlights the first meaningful divergence: Payment crosses the Checkout timeout threshold in baseline but completes before it in what-if.
+
+## What makes it different
+
+CausaLens is not another log viewer and does not claim to replace observability. Its key artifact and workflow are:
+
+- **Replay Capsule:** minimum sanitized evidence, fixtures, policies, dependency behavior, replay instructions, and failure oracle required for one supported reproduction.
+- **Safe baseline replay:** controlled execution with production data stores, credentials, and uncontrolled network access blocked.
+- **What-if replay:** a separate run that changes exactly one approved variable without mutating the capsule.
+- **Replay Diff:** aligned timelines, changed events, effect delta, oracle delta, and first meaningful divergence.
+- **Evidence-backed explanation:** an interpretation tied to concrete replay results rather than an unsupported AI guess.
+
+## High-level architecture
+
+```text
+Instrumented demo services
+          |
+          v
+Capture adapters -> Event normalizer
+          |
+          v
+Incident store + Failure oracle
+          |
+          v
+Execution graph + Timeline
+          |
+          v
+Replay Capsule compiler
+          |
+          v
+Validator + Isolated replay runtime
+          |
+          +-- Baseline replay
+          +-- One-variable what-if replay
+          |
+          v
+Replay Diff -> Command Center
+```
+
+The MVP uses a Core API, PostgreSQL, one Command Center, one isolated replay worker, controlled dependency simulators, and one checkout duplicate-effect System Pack. OpenTelemetry may supply capture evidence, but CausaLens owns its canonical `ExecutionEvent` format.
 
 ## Hackathon scope
 
-The DevJams'26 build targets a credible end-to-end vertical slice:
+P0 requires:
 
-1. Generate a known distributed failure.
-2. Capture enough execution evidence to reproduce it.
-3. Build a propagation graph.
-4. Compile a Replay Capsule.
-5. Replay the failure in an isolated environment.
-6. Modify exactly one approved variable.
-7. Compare baseline and counterfactual executions.
-8. Visualize the causal difference.
+1. one instrumented four-service demo,
+2. normalized execution capture,
+3. incident detection, graph, and timeline,
+4. a validated immutable Replay Capsule,
+5. safe baseline reproduction,
+6. one latency what-if replay,
+7. first-divergence and effect-count comparison, and
+8. one repeatable judge-visible workflow with a clean reset.
 
-The nominal hackathon duration is 48 hours, with roughly 36 hours treated as effective implementation time after reviews, judging checkpoints, presentations, integration, and interruptions.
+The nominal event duration is 48 hours, with approximately 36 effective engineering hours. A second intervention, second System Pack, AI, production integrations, and advanced infrastructure remain outside P0.
 
-## Architecture
+See [planning/SCOPE.md](planning/SCOPE.md) for the authoritative priority boundary.
 
-The current high-level architecture consists of:
+## Defensible claims
 
-- Capture Layer
-- Evidence Store
-- Propagation Graph Builder
-- Replay Capsule Compiler
-- Replay Engine
-- Intervention Engine
-- Differential / Causal Analyzer
-- API and Visualization Layer
-- Pluggable System Packs
+CausaLens provides controlled, reproducible replay for instrumented systems supported by its replay adapters. It compiles the minimum controlled evidence required by the supported scenario and generates intervention-supported evidence by comparing isolated executions.
 
-See [docs/HLD.md](docs/HLD.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+It does **not** claim:
 
-## Domain-neutral system packs
-
-The core is designed to stay domain-neutral. System Packs adapt capture, replay, state extraction, and intervention logic for specific distributed failure classes.
-
-Initial examples include:
-
-- duplicate payments
-- job/message redelivery
-- retry storms
-- stale-cache failures
-- notification fan-out
-- dependency latency failures
-- deduplication/idempotency failures
+- arbitrary production-system replay,
+- perfect byte-for-byte determinism,
+- full production-environment capture,
+- mathematically proven general causality,
+- AI-discovered root cause, or
+- production-scale observability replacement.
 
 ## Current status
 
-Completed so far:
+The repository currently contains the refined product, architecture, replay, safety, demo, scope, and execution documentation. Implementation has not started.
 
-- problem framing
-- product definition
-- hackathon positioning
-- domain-neutral architecture
-- replay safety model
-- Replay Capsule concept
-- counterfactual intervention model
-- HLD direction
-- E0-E3 execution planning
-- parallel team workstream design
-
-Implementation and integration are the next milestones.
+The next gate is E0 contract freeze: select the application stack and encode the documented event, incident, capsule, replay, intervention, diff, oracle, and System Pack contracts in implementation-ready schemas.
 
 ## Documentation
 
+### Product boundary
+
 - [Project Context](docs/PROJECT_CONTEXT.md)
 - [Problem Statement](docs/PROBLEM_STATEMENT.md)
+- [Scope](planning/SCOPE.md)
+
+### System design
+
 - [Architecture](docs/ARCHITECTURE.md)
 - [High-Level Design](docs/HLD.md)
 - [Replay Capsule](docs/REPLAY_CAPSULE.md)
 - [Replay Safety](docs/REPLAY_SAFETY.md)
-- [Causal Analysis](docs/CAUSAL_ANALYSIS.md)
+- [Replay Differential Analysis](docs/REPLAY_DIFFERENTIAL_ANALYSIS.md)
 - [System Packs](docs/SYSTEM_PACKS.md)
+
+### Demo and execution
+
 - [Demo Scenario](docs/DEMO_SCENARIO.md)
 - [Hackathon Execution](docs/HACKATHON_EXECUTION.md)
-- [E0-E3 Plan](planning/E0-E3.md)
-- [Team Workstreams](planning/TEAM_WORKSTREAMS.md)
+- [E0–E3 Plan](planning/E0-E3.md)
 - [Implementation Roadmap](planning/IMPLEMENTATION_ROADMAP.md)
-- [Scope](planning/SCOPE.md)
+- [Team Workstreams](planning/TEAM_WORKSTREAMS.md)

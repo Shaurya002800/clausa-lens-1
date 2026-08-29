@@ -1,50 +1,122 @@
 # Replay Capsule
 
-A Replay Capsule is an immutable artifact containing the minimum information required to safely reproduce an incident.
+A Replay Capsule is an immutable, versioned artifact containing the minimum controlled information required to safely reproduce one supported incident.
 
-## Candidate contents
-- initiating request/message
-- relevant downstream messages
-- normalized execution events
-- selected state snapshots or fixtures
-- configuration/policies
-- dependency responses or simulations
-- timing metadata
-- failure conditions
-- propagation relationships
-- System Pack identifier/version
-- replay instructions
-- integrity/version metadata
+It is not a full production snapshot. It contains only sanitized inputs, fixtures, policies, dependency behavior, and verification rules required by the selected System Pack.
 
-## Required properties
-
-### Minimal
-Avoid copying unrelated system state.
-
-### Immutable
-Once compiled, the capsule used for an experiment should not mutate.
-
-### Versioned
-Schemas, System Packs, and replay policies must be identifiable.
-
-### Safe
-Secrets and unsafe external destinations should not be embedded without sanitization or indirection.
-
-### Reproducible
-The capsule should contain or reference all required controlled inputs.
-
-## Conceptual schema
+## Version 1 contract
 
 ```text
 ReplayCapsule
-├── metadata
+├── schema_version
+├── capsule_id
+├── created_at
+├── source
+│   ├── incident_id
+│   ├── trace_id
+│   ├── capture_environment
+│   └── captured_at
+├── system_pack
+│   ├── id
+│   └── version
 ├── trigger
+│   ├── request_or_message
+│   └── sanitized_headers
 ├── events[]
 ├── graph
-├── state[]
-├── dependencies[]
-├── policies
-├── failure_conditions[]
+│   ├── node_event_ids[]
+│   └── edges[]
+├── state_fixtures[]
+├── dependency_fixtures[]
+├── timing_policy
 ├── replay_plan
+│   ├── entrypoint
+│   ├── service_order
+│   └── reset_strategy
+├── failure_oracle
+│   ├── id
+│   ├── version
+│   ├── expected_result
+│   └── expected_evidence
+├── allowed_interventions[]
+├── safety
+│   ├── sanitization_status
+│   ├── blocked_destinations[]
+│   ├── allowed_destinations[]
+│   └── credential_profile
 └── integrity
+    ├── algorithm
+    └── digest
 ```
+
+## Required semantics
+
+### Source and provenance
+
+The capsule must identify the incident, trace, capture environment class, System Pack version, and schema version that produced it. This allows a replay to reject incompatible or untraceable input.
+
+### Trigger
+
+The trigger contains the sanitized request or message that starts the supported replay scenario. Secrets, production credentials, and uncontrolled destination URLs must never be copied directly.
+
+### Events and graph
+
+Events conform to the canonical `ExecutionEvent` contract. The graph includes only the event identifiers and typed relationships required to reconstruct the supported execution path.
+
+### State fixtures
+
+State fixtures contain or reference the minimum replay-only records needed by the scenario. Every fixture declares its source type, sanitization status, content digest, and reset behavior.
+
+### Dependency fixtures
+
+Every external interaction required for replay resolves to a controlled simulator response. A fixture declares the request match, response, latency, failure behavior, and invocation limit.
+
+### Timing policy
+
+The timing policy distinguishes exact controlled delays from comparison tolerances. Wall-clock timestamps are not expected to match the original execution byte for byte.
+
+### Replay plan
+
+The replay plan declares the supported entrypoint, required service sequence, fixture-loading order, and clean-reset strategy. Arbitrary scripts embedded in captured input are not permitted.
+
+### Failure oracle
+
+The failure oracle specifies what must be observed for reproduction. For the golden scenario it checks that the checkout retry occurred and the same logical operation created two ledger effects.
+
+### Allowed interventions
+
+The capsule lists intervention types permitted by the active System Pack. A run may select zero interventions for baseline or exactly one for what-if; it may not add a new intervention type at runtime.
+
+### Safety metadata
+
+Safety metadata proves that captured values were sanitized and identifies default-denied and explicitly allow-listed destinations. A replay-only credential profile is referenced, never embedded.
+
+### Integrity
+
+The digest covers all replay-relevant capsule content. Validation must fail if content changes after compilation.
+
+## Immutability model
+
+- A compiled capsule never changes in place.
+- A baseline run references the capsule with no intervention.
+- A what-if run references the same capsule plus one separate intervention record.
+- If fixtures, policies, or the failure oracle change, the compiler creates a new capsule with a new identifier and provenance.
+
+## Validation gate
+
+A capsule is `VALID` only when:
+
+1. its schema is supported,
+2. its integrity digest matches,
+3. its System Pack version is available,
+4. every required fixture resolves,
+5. the trigger and fixtures are sanitized,
+6. its replay plan is supported,
+7. its failure oracle is executable, and
+8. its isolation policy contains no production destination or credential.
+
+Any failed condition blocks replay with a specific machine-readable and human-readable reason.
+
+## MVP minimization rule
+
+Minimization is explicit and scenario-driven for the hackathon. The duplicate-effect System Pack selects the known checkout inputs, ledger fixtures, payment behavior, timing, and oracle evidence. Automated general-purpose state minimization is future work.

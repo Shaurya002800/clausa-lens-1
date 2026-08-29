@@ -1,24 +1,77 @@
 # Replay Safety
 
-Replaying production incident traffic directly is unsafe. CausaLens therefore treats isolation as a core architectural requirement.
+Replaying captured incident traffic can repeat payments, messages, notifications, or writes. CausaLens therefore treats isolation as a product feature and a hard execution gate, not an operational suggestion.
 
-## Safety rules
-- Run replays in a separate namespace/environment.
-- Block uncontrolled outbound network access.
-- Replace payment, email, webhook, SMS, and similar side-effecting dependencies.
-- Use replay-specific credentials where credentials are unavoidable.
-- Prevent writes to production databases, queues, and caches.
-- Sanitize or tokenize sensitive captured values where possible.
-- Allow-list explicitly approved replay dependencies.
-- Record every dependency interaction performed during replay.
+## Default-deny policy
 
-## Safety gate
-A capsule should not be eligible for counterfactual experiments until a baseline replay has passed a reproducibility and isolation gate.
+A replay starts with no production credentials, no production data-store routes, and no general outbound network access. Access is granted only to replay-scoped services or explicitly allow-listed simulators.
 
-The gate should answer:
-1. Was the original failure reproduced?
-2. Were all external side effects contained?
-3. Were unexpected external dependencies observed?
-4. Is the replay result sufficiently comparable to the captured incident?
+## Preflight checks
 
-Failure at the gate stops experimentation.
+Before creating a replay runtime, the validator must confirm:
+
+1. the capsule schema and integrity digest are valid,
+2. the System Pack and failure oracle versions are supported,
+3. all captured inputs and fixtures are marked sanitized,
+4. production database, queue, cache, webhook, and API destinations are absent,
+5. only replay-specific credentials are referenced,
+6. every required external dependency resolves to an approved simulator, and
+7. the reset strategy targets replay-only state.
+
+Failure blocks the run before any service starts.
+
+## Runtime controls
+
+- Run each replay in a clean, separately identified namespace or process boundary.
+- Block uncontrolled outbound connections.
+- Route payment, email, webhook, SMS, and similar dependencies to simulators.
+- Write only to replay-scoped databases, queues, caches, and file storage.
+- Record every attempted dependency interaction, including denied attempts.
+- Terminate the replay on prohibited egress or a production-destination match.
+- Tear down or reset replay state after the result is persisted.
+
+## Sensitive data
+
+- Remove secrets and production credentials during capture.
+- Tokenize or replace personal and payment data with scenario-safe fixtures.
+- Store content digests when the original value is unnecessary.
+- Permit the UI to reveal only sanitized replay evidence.
+
+## Isolation evidence
+
+Each replay result records:
+
+- runtime namespace identifier,
+- capsule and System Pack versions,
+- network policy result,
+- credential profile identifier,
+- data-store destinations used,
+- simulator interactions,
+- denied interactions,
+- reset/teardown result, and
+- overall isolation verdict.
+
+The Command Center must show this evidence before presenting a replay as safely reproduced.
+
+## Baseline gate
+
+A baseline replay passes only when:
+
+1. the run completed,
+2. the isolation verdict passed,
+3. no prohibited interaction occurred,
+4. the configured failure oracle matched,
+5. the expected effect and retry evidence was observed, and
+6. the result is structurally comparable to the captured original within declared tolerances.
+
+Failure at this gate prevents all what-if replays for that baseline.
+
+## Failure classification
+
+- Validation failure or unsafe configuration: `BLOCKED`.
+- Prohibited runtime interaction: terminate and mark `BLOCKED`.
+- Internal service, simulator, or fixture failure: `FAILED`.
+- Safe completed execution without the expected incident: `NOT_REPRODUCED`.
+- Safe completed execution with the expected incident: `REPRODUCED`.
+
+CausaLens must never relabel a blocked or failed run as a successful non-reproduction.
