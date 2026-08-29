@@ -62,13 +62,13 @@ ReplayDiff
 ├── added_events[]
 ├── removed_events[]
 ├── changed_events[]
-├── first_divergence
+├── first_meaningful_divergence
 ├── effect_delta
 ├── evidence_summary
 └── limitations[]
 ```
 
-`first_divergence` records the aligned event keys, baseline value, comparison value, timestamp offset, and rule that made the difference meaningful.
+`first_meaningful_divergence` records the aligned event keys, baseline value, comparison value, timestamp offset, and rule that made the difference meaningful.
 
 ## Evidence-backed interpretation
 

@@ -21,27 +21,7 @@ The architecture exists to make one supported distributed incident safely replay
 
 ### ExecutionEvent
 
-Every captured or replayed action is normalized to one event shape:
-
-| Field | Requirement | Purpose |
-| --- | --- | --- |
-| `schema_version` | required | Selects the event contract version. |
-| `event_id` | required | Uniquely identifies the event within an execution. |
-| `trace_id` | required | Groups one distributed request journey. |
-| `parent_event_id` | optional | Links direct execution parentage. |
-| `service` | required | Names the emitting service. |
-| `operation` | required | Names the meaningful operation. |
-| `event_type` | required | Classifies start, end, dependency, retry, message, state, effect, or error. |
-| `timestamp_ms` | required | Orders the event within the controlled clock model. |
-| `duration_ms` | optional | Records a completed operation's duration. |
-| `attempt` | required | Distinguishes retries; defaults to `1`. |
-| `status` | required | Records success, error, timeout, retrying, or blocked. |
-| `links` | optional | Records message, dependency, retry, or effect relationships. |
-| `input_ref` | optional | References sanitized captured input. |
-| `output_ref` | optional | References sanitized output or effect evidence. |
-| `attributes` | optional | Stores allow-listed, sanitized scenario metadata. |
-
-Raw logs or OpenTelemetry spans may feed the normalizer, but they are not the canonical internal model.
+The canonical v1.0 shape and field semantics are frozen in [CONTRACTS.md](CONTRACTS.md). Use `component.name`, `occurred_at`, `sequence`, `logical_operation_id`, and `replay_run_id`; do not introduce ambiguous `service`, `timestamp_ms`, `latency_ms`, or a generic `links` array for P0. Raw logs or OpenTelemetry spans may feed the normalizer, but they are not the canonical internal model.
 
 ### Incident
 
@@ -57,14 +37,7 @@ An incident identifies a captured execution whose failure oracle evaluated to `t
 
 ### Execution graph
 
-Graph nodes reference `ExecutionEvent` records. Edge types are limited to:
-
-- `parent`,
-- `temporal`,
-- `message`,
-- `dependency`,
-- `retry`, and
-- `effect`.
+Graph nodes reference `ExecutionEvent` records. Edge types are `PARENT_CHILD`, `TEMPORAL`, `DEPENDENCY`, `RETRY`, `STATE`, and `SIDE_EFFECT`.
 
 These edges describe observed execution relationships. Causal interpretation is reserved for post-replay evidence.
 
@@ -149,13 +122,11 @@ Command Center explanation
 ```text
 CREATED
   -> VALIDATING
-  -> READY
   -> RUNNING
-  -> REPRODUCED | NOT_REPRODUCED | FAILED | BLOCKED
+  -> COMPLETED | FAILED | BLOCKED
 ```
 
-- `REPRODUCED` means the configured failure oracle matched and the isolation gate passed.
-- `NOT_REPRODUCED` means execution completed but the oracle did not match.
+- `COMPLETED` requires an outcome: `REPRODUCED`, `NOT_REPRODUCED`, `MITIGATED`, `UNCHANGED`, or `INCONCLUSIVE`.
 - `FAILED` means the replay could not complete because of an internal or fixture error.
 - `BLOCKED` means schema, integrity, safety, or adapter validation rejected the run.
 
